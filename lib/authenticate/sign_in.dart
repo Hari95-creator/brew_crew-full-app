@@ -1,6 +1,9 @@
 import 'package:brew_crew/services/auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:brew_crew/shared/constants.dart';
+import 'package:brew_crew/shared/loading.dart';
+
  class SignIn extends StatefulWidget {
 
    final Function toggleView;
@@ -13,15 +16,19 @@ import 'package:flutter/material.dart';
  class _SignInState extends State<SignIn> {
 
    final AuthSerivce _auth = AuthSerivce();
+   final _formkey= GlobalKey<FormState>();
+
+   bool loading=false;
 
    //setState
 
    String email='';
    String password= '';
+   String error='';
 
    @override
    Widget build(BuildContext context) {
-     return Scaffold(
+     return loading?Loading():Scaffold(
        backgroundColor: Colors.brown[100],
        appBar: AppBar(
          backgroundColor:Colors.brown[400],
@@ -40,16 +47,36 @@ import 'package:flutter/material.dart';
        body: Container(
          padding: EdgeInsets.symmetric(vertical: 20.0,horizontal: 50.0),
          child:Form(
+           key: _formkey,
            child: Column(
              children: [
                SizedBox(height: 20.0),
                TextFormField(
+                 decoration:textInputDecoration.copyWith(hintText: "Email",prefixIcon: Icon(Icons.email)),
+                   validator: (val){
+                     if(val.isEmpty)
+                     {
+
+                       return "email is required";
+
+                     }
+
+                     if (!RegExp(r"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?")
+                         .hasMatch(val))
+                     {
+                       return 'Please enter a valid email Address';
+                     }
+
+                     return null;
+                   },
                  onChanged: (val){
                       setState(()=> email=val);
                  },
                ),
                SizedBox(height: 20.0),
                TextFormField(
+                 validator: (val)=>val.length < 6 ? "enter a password length of 6 character":null,
+                 decoration:textInputDecoration.copyWith(hintText: "password",prefixIcon: Icon(Icons.security)),
                  obscureText: true,
                  onChanged: (val)
                  {
@@ -64,11 +91,27 @@ import 'package:flutter/material.dart';
                      color: Colors.white),
                  ),
                     onPressed: () async{
-
-                      print(email);
-                      print(password);
-                    },
+                      if(_formkey.currentState.validate())
+                      {
+                        setState(() => loading =true);
+                        dynamic result=await _auth.signInrWithEmailAndPassword(email, password);
+                        if(result == null)
+                       {
+                         setState(()
+                          {
+                            error='email/password is wrong';
+                            loading=false;
+                         });
+                         }
+                       }
+                      }
                ),
+               SizedBox(height: 12.0),
+               Text(
+                 error,
+                 style: TextStyle( color: Colors.red,
+                     fontSize: 14.0),
+               )
              ],
            ),
          )
