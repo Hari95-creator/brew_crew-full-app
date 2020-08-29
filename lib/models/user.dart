@@ -4,5 +4,4 @@ class User
 
   User({this.uid});
 
-
 }
